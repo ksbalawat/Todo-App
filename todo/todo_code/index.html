@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Raleway', sans-serif; /* Updated font */
+            background-image: url('https://i.pinimg.com/control2/736x/9c/3b/c7/9c3bc7f79bd423d65bdbf4826078028e.jpg');
+            background-size: cover; /* Ensure the background covers the entire screen */
+            background-position: center center; /* Center the background */
+            background-attachment: fixed; /* Keep the background fixed while scrolling */
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            overflow: hidden; /* Prevent background from repeating */
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+            font-weight: 600; /* Bold font for the title */
+        }
+
+        #mainArea {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 30px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .todo-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .todo-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .todo-item span {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1.1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #333;
+        }
+
+        .todo-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .todo-form label {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .todo-form button {
+            background-color: #27ae60; /* Green for submit button */
+            margin-top: 15px;
+        }
+
+        .todo-form button:hover {
+            background-color: #2ecc71;
+        }
+
+        .todo-item button {
+            background-color: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem; /* Make the checkmark larger */
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .todo-item button:hover {
+            color: #27ae60; /* Change color on hover */
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Todo 📝</h1>
+    
+    <div class="todo-form">
+        <label for="title1">Task</label>
+        <input type="text" id="title1">
+        
+        <label for="description">Task Info</label>
+        <input type="text" id="description">
+        
+        <button onclick="onPress()">Smash</button>
+    </div>
+
+    <div id="mainArea">
+        <!-- Todos will be dynamically rendered here -->
+    </div>
+
+    <script>
+        // Function to handle the removal of the todo from the DOM after it is deleted
+        function deleteDone(todoElement) {
+            if (todoElement) {
+                console.log("Todo deleted successfully");
+                todoElement.remove(); // Dynamically remove the element from the DOM
+            } else {
+                console.error("Todo element is undefined");
+            }
+        }
+
+        // Function to delete a todo item based on ID
+        function deleteTodo(id, todoElement) {
+            console.log("Attempting to delete todo with ID:", id); // Debugging the ID
+            fetch("http://localhost:3000/todos/" + id, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then((response) => {
+                if (response.ok) {
+                    deleteDone(todoElement); // If deletion is successful, remove the element from the DOM
+                } else {
+                    console.error("Failed to delete todo. Status:", response.status);
+                }
+            })
+            .catch((error) => console.error("Error deleting todo:", error));
+        }
+
+        // Function to handle the callback after fetching todos and rendering them
+        function todosCallback(data) {
+            var parentElement = document.getElementById("mainArea");
+            parentElement.innerHTML = ''; // Clear the existing list before re-rendering
+
+            for (var i = 0; i < data.length; i++) {
+                var childElement = document.createElement("div");
+                childElement.className = 'todo-item'; // Add class for styling
+
+                var grandChildElement1 = document.createElement("span");
+                grandChildElement1.innerHTML = data[i].title;
+
+                var grandChildElement2 = document.createElement("span");
+                grandChildElement2.innerHTML = data[i].description;
+
+                var grandChildElement3 = document.createElement("button");
+                grandChildElement3.innerHTML = "✅"; // Using checkmark as the delete button
+
+                // Pass the parent element to deleteTodo for dynamic removal
+                grandChildElement3.setAttribute(
+                    "onclick",
+                    `deleteTodo(${data[i].id}, this.parentElement)` // Pass parent element for deletion
+                );
+
+                childElement.appendChild(grandChildElement1);
+                childElement.appendChild(grandChildElement2);
+                childElement.appendChild(grandChildElement3);
+
+                parentElement.appendChild(childElement);
+            }
+        }
+
+        // Callback function to get data from the server and render todos
+        function getDataCallback(resp) {
+            resp.json().then(todosCallback);
+        }
+
+        // Function to fetch todos from the backend
+        function getData() {
+            fetch("http://localhost:3000/todos", {
+                method: "GET",
+            }).then(getDataCallback);
+        }
+
+        // Call getData() to render the todos when the page loads
+        getData();
+
+        // Function to handle the response when adding a new todo
+        function parsedResponse(data) {
+            console.log(data);
+            var parentElement = document.getElementById("mainArea");
+            var childElement = document.createElement("div");
+            childElement.className = 'todo-item'; // Add class for styling
+
+            var grandChildElement1 = document.createElement("span");
+            grandChildElement1.innerHTML = data.title;
+
+            var grandChildElement2 = document.createElement("span");
+            grandChildElement2.innerHTML = data.description;
+
+            var grandChildElement3 = document.createElement("button");
+            grandChildElement3.innerHTML = "✅"; // Using checkmark as the delete button
+
+            // Attach event listener to the delete button for this new todo
+            grandChildElement3.setAttribute(
+                "onclick",
+                `deleteTodo(${data.id}, this.parentElement)`
+            );
+
+            childElement.appendChild(grandChildElement1);
+            childElement.appendChild(grandChildElement2);
+            childElement.appendChild(grandChildElement3);
+
+            parentElement.appendChild(childElement);
+        }
+
+        // Callback for the POST request to add a new todo
+        function callback(resp) {
+            resp.json().then(parsedResponse);
+        }
+
+        // Function to handle the submission of a new todo
+        function onPress() {
+            var title = document.getElementById("title1").value;
+            var description = document.getElementById("description").value;
+
+            fetch("http://localhost:3000/todos", {
+                method: "POST",
+                body: JSON.stringify({
+                    title: title,
+                    description: description
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(callback);
+        }
+    </script>
+</body>
+</html>
